@@ -1,0 +1,6 @@
+{
+  "name": "البان الدوار - لوحة الطلبات",
+  "description": "تطبيق استقبال وإدارة طلبات البان الدوار والإشعارات الفورية للطلبات الجديدة",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
