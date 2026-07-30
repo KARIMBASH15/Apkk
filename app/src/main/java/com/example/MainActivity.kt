@@ -23,15 +23,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -69,6 +74,7 @@ import com.example.ui.screens.CustomersScreen
 import com.example.ui.screens.NotificationsScreen
 import com.example.ui.screens.OrdersScreen
 import com.example.ui.screens.SettingsScreen
+import com.example.ui.theme.AlarmRed
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.PrimaryBlue
 import com.example.ui.theme.PrimaryDarkBlue
@@ -161,15 +167,42 @@ fun MainAppScreen(viewModel: MainViewModel) {
                             }
                         }
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = PrimaryDarkBlue)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = PrimaryDarkBlue),
+                    actions = {
+                        if (uiState.isAlarmActive) {
+                            Button(
+                                onClick = { viewModel.stopAlarm() },
+                                colors = ButtonDefaults.buttonColors(containerColor = AlarmRed, contentColor = Color.White),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.padding(end = 8.dp)
+                            ) {
+                                Icon(Icons.Default.VolumeOff, contentDescription = "كتم الصوت", modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("🔕 إيقاف الصوت", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 )
 
                 AnimatedVisibility(visible = uiState.isAlarmActive) {
                     AlarmBanner(
                         message = uiState.alarmMessage,
+                        style = uiState.settings.alarmStyle,
                         onStopAlarm = { viewModel.stopAlarm() }
                     )
                 }
+            }
+        },
+        floatingActionButton = {
+            if (uiState.isAlarmActive) {
+                ExtendedFloatingActionButton(
+                    onClick = { viewModel.stopAlarm() },
+                    containerColor = AlarmRed,
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(16.dp),
+                    icon = { Icon(Icons.Default.VolumeOff, contentDescription = "إيقاف الجرس", modifier = Modifier.size(24.dp)) },
+                    text = { Text("🔕 إيقاف صوت الإشعار التنبيهي", fontWeight = FontWeight.Black, fontSize = 14.sp) }
+                )
             }
         },
         bottomBar = {
