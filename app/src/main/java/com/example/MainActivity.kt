@@ -48,7 +48,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -61,7 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.ui.components.AlarmBanner
-import com.example.ui.components.PermissionCard
+import com.example.ui.components.PermissionDialog
 import com.example.ui.screens.ArchiveScreen
 import com.example.ui.screens.CustomersScreen
 import com.example.ui.screens.NotificationsScreen
@@ -96,10 +98,23 @@ fun MainAppScreen(viewModel: MainViewModel) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var hasNotifPermission = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-        } else true
+    var hasNotifPermission by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            } else true
+        )
+    }
+    var showPermissionDialog by remember { mutableStateOf(!hasNotifPermission) }
+
+    if (showPermissionDialog && !hasNotifPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        PermissionDialog(
+            onDismiss = { showPermissionDialog = false },
+            onPermissionGranted = {
+                hasNotifPermission = true
+                showPermissionDialog = false
+            }
+        )
     }
 
     LaunchedEffect(Unit) {
@@ -237,11 +252,11 @@ fun MainAppScreen(viewModel: MainViewModel) {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (!hasNotifPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                PermissionCard(
-                    onPermissionGranted = {
-                        hasNotifPermission = true
-                    }
+            if (uiState.isAlarmActive) {
+                AlarmBanner(
+                    message = uiState.alarmMessage,
+                    style = uiState.settings.alarmStyle,
+                    onStopAlarm = { viewModel.stopAlarm() }
                 )
             }
 
@@ -270,8 +285,11 @@ fun MainAppScreen(viewModel: MainViewModel) {
                 )
                 4 -> SettingsScreen(
                     uiState = uiState,
-                    onSaveSettings = { mode, price, invSize ->
-                        viewModel.saveStoreSettings(mode, price, invSize)
+                    onSaveSettings = { mode, price, invSize, tone, vib, style ->
+                        viewModel.saveStoreSettings(mode, price, invSize, tone, vib, style)
+                    },
+                    onPlayPreviewTone = { tone, vib ->
+                        viewModel.playPreviewTone(tone, vib)
                     },
                     onTriggerTestAlarm = {
                         viewModel.triggerInAppAlarm("🔔 اختبار جرس التنبيه بالطلبات الجديدة!")

@@ -171,20 +171,20 @@ fun OrdersScreen(
                         text = "📦 لا توجد طلبات في هذا القسم حالياً",
                         fontWeight = FontWeight.Bold,
                         color = TextMuted,
-                        fontSize = 15.sp
+                        fontSize = 16.sp
                     )
                     Text(
                         text = "أي طلب جديد يطلبه العملاء سيظهر هنا فوراً مع تنبيه صوتي وإشعار خلفية",
-                        fontSize = 12.sp,
+                        fontSize = 13.sp,
                         color = TextMuted,
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 6.dp)
                     )
                 }
             }
         } else {
             LazyColumn(
-                contentPadding = PaddingValues(bottom = 80.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                contentPadding = PaddingValues(bottom = 90.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(currentColumnOrders, key = { it.id }) { order ->
                     OrderCard(

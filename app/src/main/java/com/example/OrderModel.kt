@@ -47,7 +47,10 @@ data class Customer(
 data class StoreSettings(
     val shippingMode: String = "manual", // manual, fixed
     val fixedShippingPrice: Double = 0.0,
-    val invoiceSize: String = "88mm" // 88mm, a4
+    val invoiceSize: String = "88mm", // 88mm, a4
+    val alarmTone: String = "default", // default, chime, siren, soft, triple
+    val alarmVibration: String = "standard", // standard, strong, soft, none
+    val alarmStyle: String = "banner_full" // banner_full, banner_compact, dialog_modal
 )
 
 data class NotificationLink(

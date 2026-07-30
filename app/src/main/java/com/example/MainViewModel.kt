@@ -170,8 +170,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     val mode = snapshot.getString("shippingMode") ?: "manual"
                     val fixedPrice = snapshot.getDouble("fixedShippingPrice") ?: 0.0
                     val invSize = snapshot.getString("invoiceSize") ?: "88mm"
+                    val alarmTone = snapshot.getString("alarmTone") ?: "default"
+                    val alarmVibration = snapshot.getString("alarmVibration") ?: "standard"
+                    val alarmStyle = snapshot.getString("alarmStyle") ?: "banner_full"
                     _uiState.update {
-                        it.copy(settings = StoreSettings(shippingMode = mode, fixedShippingPrice = fixedPrice, invoiceSize = invSize))
+                        it.copy(
+                            settings = StoreSettings(
+                                shippingMode = mode,
+                                fixedShippingPrice = fixedPrice,
+                                invoiceSize = invSize,
+                                alarmTone = alarmTone,
+                                alarmVibration = alarmVibration,
+                                alarmStyle = alarmStyle
+                            )
+                        )
                     }
                 }
             }
@@ -281,8 +293,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun triggerInAppAlarm(message: String) {
-        AudioAlarmManager.startAlarm(getApplication())
+        val currentSettings = _uiState.value.settings
+        AudioAlarmManager.startAlarm(
+            getApplication(),
+            currentSettings.alarmTone,
+            currentSettings.alarmVibration
+        )
         _uiState.update { it.copy(isAlarmActive = true, alarmMessage = message) }
+    }
+
+    fun playPreviewTone(tone: String, vibration: String) {
+        AudioAlarmManager.playPreview(getApplication(), tone, vibration)
     }
 
     fun stopAlarm() {
@@ -326,7 +347,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         advanceOrderStatus(orderId, "archived")
     }
 
-    fun saveStoreSettings(mode: String, fixedPrice: Double, invoiceSize: String) {
+    fun saveStoreSettings(
+        mode: String,
+        fixedPrice: Double,
+        invoiceSize: String,
+        alarmTone: String = "default",
+        alarmVibration: String = "standard",
+        alarmStyle: String = "banner_full"
+    ) {
         viewModelScope.launch {
             try {
                 db.collection("aldwaar_settings").document("config").set(
@@ -334,11 +362,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         "shippingMode" to mode,
                         "fixedShippingPrice" to fixedPrice,
                         "invoiceSize" to invoiceSize,
+                        "alarmTone" to alarmTone,
+                        "alarmVibration" to alarmVibration,
+                        "alarmStyle" to alarmStyle,
                         "updatedAt" to FieldValue.serverTimestamp()
                     ),
                     com.google.firebase.firestore.SetOptions.merge()
                 )
-                _toastEvent.emit("✅ تم حفظ إعدادات المتجر")
+                _toastEvent.emit("✅ تم حفظ إعدادات المتجر والنغمات بنجاح")
             } catch (e: Exception) {
                 _toastEvent.emit("❌ تعذر حفظ الإعدادات: ${e.message}")
             }
