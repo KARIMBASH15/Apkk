@@ -153,7 +153,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         }
                         if (hasNewReceived) {
                             val latest = list.firstOrNull { it.status == "received" }
-                            val msg = if (latest != null) "🔔 طلب جديد من ${latest.customerName} بقيمة ${latest.total} جنيه" else "🔔 وصل طلب جديد الآن!"
+                            val msg = if (latest != null) {
+                                val itemsStr = latest.items.joinToString("\n• ") { "${it.name} (×${it.qty})" }
+                                "🔔 طلب جديد من: ${latest.customerName}\n💰 المبلغ: ${latest.total} جنيه\n📦 المنتجات بالطلب:\n• $itemsStr"
+                            } else {
+                                "🔔 وصل طلب جديد الآن!"
+                            }
                             triggerInAppAlarm(msg)
                         }
                     }

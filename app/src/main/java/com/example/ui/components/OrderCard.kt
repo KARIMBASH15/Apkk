@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -73,8 +74,17 @@ fun OrderCard(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    var showInvoicePreview by remember { mutableStateOf(false) }
     var shipInput by remember(order.shippingPrice) {
         mutableStateOf(order.shippingPrice?.toString() ?: "")
+    }
+
+    if (showInvoicePreview) {
+        OrderInvoiceDialog(
+            order = order,
+            invoiceSize = "88mm",
+            onDismiss = { showInvoicePreview = false }
+        )
     }
 
     val formattedDate = remember(order.createdAt) {
@@ -418,11 +428,23 @@ fun OrderCard(
                 }
 
                 OutlinedButton(
+                    onClick = { showInvoicePreview = true },
+                    modifier = Modifier.height(48.dp),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(Icons.Default.Visibility, contentDescription = "عرض الفاتورة", tint = PrimaryBlue, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("عرض 👁️", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryBlue)
+                }
+
+                OutlinedButton(
                     onClick = onPrintInvoice,
                     modifier = Modifier.height(48.dp),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Icon(Icons.Default.Print, contentDescription = "طباعة", tint = PrimaryBlue)
+                    Icon(Icons.Default.Print, contentDescription = "طباعة", tint = PrimaryBlue, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("طباعة 🖨", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryBlue)
                 }
             }
         }

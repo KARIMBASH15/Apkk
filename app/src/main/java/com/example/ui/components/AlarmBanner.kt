@@ -90,13 +90,19 @@ fun AlarmBanner(
                     )
                 },
                 text = {
-                    Text(
-                        text = message.ifEmpty { "وصل طلب جديد الآن للمتجر. يُرجى مراجعة تفاصيل الطلب وتحديد سعر التوصيل." },
-                        fontSize = 14.sp,
-                        color = PrimaryDarkBlue,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 20.sp
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = message.ifEmpty { "وصل طلب جديد الآن للمتجر. يُرجى مراجعة تفاصيل الطلب وتحديد سعر التوصيل." },
+                            fontSize = 14.sp,
+                            color = PrimaryDarkBlue,
+                            textAlign = TextAlign.Start,
+                            lineHeight = 22.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 },
                 confirmButton = {
                     Button(
