@@ -374,7 +374,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     ),
                     com.google.firebase.firestore.SetOptions.merge()
                 )
-                _toastEvent.emit("✅ تم حفظ إعدادات المتجر والنغمات بنجاح")
+
+                // If fixed shipping mode enabled, auto-apply fixed price to received orders without shipping price
+                if (mode == "fixed" && fixedPrice > 0) {
+                    _uiState.value.orders.filter { it.status == "received" && (it.shippingPrice == null || it.shippingPrice == 0.0) }.forEach { ord ->
+                        db.collection("aldwaar_orders").document(ord.id).update(
+                            mapOf(
+                                "shippingPrice" to fixedPrice,
+                                "updatedAt" to FieldValue.serverTimestamp()
+                            )
+                        )
+                    }
+                }
+
+                _toastEvent.emit("✅ تم حفظ إعدادات المتجر والنغمات وتطبيق الشحن الثابت")
             } catch (e: Exception) {
                 _toastEvent.emit("❌ تعذر حفظ الإعدادات: ${e.message}")
             }
@@ -385,7 +398,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 db.collection("aldwaar_customers").document(customerId).update("fixedShippingPrice", price)
-                _toastEvent.emit("✅ تم حفظ سعر الشحن الثابت لهذا العميل")
+
+                val targetCust = _uiState.value.customers.find { it.id == customerId }
+                if (targetCust != null) {
+                    _uiState.value.orders.filter {
+                        (it.customerPhone == targetCust.phone || it.customerName == targetCust.name) &&
+                                (it.shippingPrice == null || it.shippingPrice == 0.0)
+                    }.forEach { ord ->
+                        db.collection("aldwaar_orders").document(ord.id).update(
+                            mapOf(
+                                "shippingPrice" to price,
+                                "updatedAt" to FieldValue.serverTimestamp()
+                            )
+                        )
+                    }
+                }
+
+                _toastEvent.emit("✅ تم حفظ وتطبيق سعر الشحن الثابت لهذا العميل على طلباته")
             } catch (e: Exception) {
                 _toastEvent.emit("❌ تعذر حفظ سعر العميل: ${e.message}")
             }

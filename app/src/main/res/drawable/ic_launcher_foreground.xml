@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:width="66dp"
-        android:height="66dp"
-        android:drawable="@drawable/img_app_store_icon_1785379666577"
+        android:width="78dp"
+        android:height="78dp"
+        android:drawable="@drawable/aldwaar_official_logo_1785430958861"
         android:gravity="center" />
 </layer-list>
+

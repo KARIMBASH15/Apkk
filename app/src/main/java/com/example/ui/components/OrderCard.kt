@@ -346,7 +346,7 @@ fun OrderCard(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Big Touch-Target Action Buttons
+            // Big Touch-Target Action Buttons with High-Contrast Visual Styling
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -354,16 +354,21 @@ fun OrderCard(
                 when (order.status) {
                     "received" -> {
                         Button(
-                            onClick = { onAdvanceStatus("delivering") },
-                            enabled = hasShip,
+                            onClick = {
+                                if (!hasShip) {
+                                    val p = shipInput.toDoubleOrNull() ?: 0.0
+                                    onSaveShipping(p)
+                                }
+                                onAdvanceStatus("delivering")
+                            },
                             colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
                             modifier = Modifier
-                                .weight(1f)
+                                .weight(1.3f)
                                 .height(48.dp),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Icon(Icons.Default.LocalShipping, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
-                            Text("🚚 بدء التوصيل", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Icon(Icons.Default.LocalShipping, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp).padding(end = 4.dp))
+                            Text("🚚 بدء التوصيل", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
                         }
                     }
                     "delivering" -> {
@@ -371,22 +376,23 @@ fun OrderCard(
                             onClick = { onAdvanceStatus("delivered") },
                             colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
                             modifier = Modifier
-                                .weight(1.2f)
+                                .weight(1.3f)
                                 .height(48.dp),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
-                            Text("✅ تم التوصيل", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp).padding(end = 4.dp))
+                            Text("✅ تم التوصيل", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White)
                         }
                         OutlinedButton(
                             onClick = { onAdvanceStatus("received") },
                             modifier = Modifier
-                                .weight(0.8f)
+                                .weight(0.7f)
                                 .height(48.dp),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Icon(Icons.Default.Undo, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                            Text("↩ رجوع", fontSize = 13.sp)
+                            Icon(Icons.Default.Undo, contentDescription = null, tint = TextDark, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text("↩ رجوع", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextDark)
                         }
                     }
                     "delivered" -> {
@@ -394,22 +400,23 @@ fun OrderCard(
                             onClick = onArchive,
                             colors = ButtonDefaults.buttonColors(containerColor = DairyGold),
                             modifier = Modifier
-                                .weight(1.2f)
+                                .weight(1.3f)
                                 .height(48.dp),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Icon(Icons.Default.Archive, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
-                            Text("📥 أرشفة الطلب", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Icon(Icons.Default.Archive, contentDescription = null, tint = PrimaryDarkBlue, modifier = Modifier.size(20.dp).padding(end = 4.dp))
+                            Text("📥 أرشفة الطلب", fontSize = 14.sp, fontWeight = FontWeight.Black, color = PrimaryDarkBlue)
                         }
                         OutlinedButton(
                             onClick = { onAdvanceStatus("delivering") },
                             modifier = Modifier
-                                .weight(0.8f)
+                                .weight(0.7f)
                                 .height(48.dp),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Icon(Icons.Default.Undo, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                            Text("↩ رجوع", fontSize = 13.sp)
+                            Icon(Icons.Default.Undo, contentDescription = null, tint = TextDark, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text("↩ رجوع", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextDark)
                         }
                     }
                     "archived" -> {
@@ -417,12 +424,12 @@ fun OrderCard(
                             onClick = { onAdvanceStatus("delivered") },
                             colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                             modifier = Modifier
-                                .weight(1f)
+                                .weight(1.2f)
                                 .height(48.dp),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Icon(Icons.Default.Undo, contentDescription = null, modifier = Modifier.padding(end = 4.dp))
-                            Text("استعادة للتم التوصيل", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Icon(Icons.Default.Undo, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp).padding(end = 4.dp))
+                            Text("استعادة للتم التوصيل", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                 }
