@@ -101,6 +101,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         notifsListener?.remove()
     }
 
+    private fun isCustomerMatch(orderPhone: String, orderName: String, custPhone: String, custName: String): Boolean {
+        val p1 = orderPhone.replace(Regex("\\D"), "")
+        val p2 = custPhone.replace(Regex("\\D"), "")
+        if (p1.isNotEmpty() && p2.isNotEmpty()) {
+            if (p1 == p2) return true
+            if (p1.length >= 8 && p2.length >= 8 && p1.takeLast(8) == p2.takeLast(8)) return true
+        }
+        if (orderName.isNotBlank() && custName.isNotBlank()) {
+            if (orderName.trim().lowercase() == custName.trim().lowercase()) return true
+        }
+        return false
+    }
+
     private fun startFirestoreListeners() {
         // Orders Listener
         ordersListener = db.collection("aldwaar_orders")
@@ -146,13 +159,32 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         }
                     }
 
+                    // Auto-apply customer fixed shipping or store fixed shipping if missing
+                    val updatedList = list.map { ord ->
+                        if (ord.shippingPrice == null || ord.shippingPrice == 0.0) {
+                            val matchingCust = _uiState.value.customers.firstOrNull { c ->
+                                c.fixedShippingPrice != null && c.fixedShippingPrice!! > 0 &&
+                                        isCustomerMatch(ord.customerPhone, ord.customerName, c.phone, c.name)
+                            }
+                            val targetPrice = matchingCust?.fixedShippingPrice
+                                ?: if (_uiState.value.settings.shippingMode == "fixed" && _uiState.value.settings.fixedShippingPrice > 0) {
+                                    _uiState.value.settings.fixedShippingPrice
+                                } else null
+
+                            if (targetPrice != null) {
+                                db.collection("aldwaar_orders").document(ord.id).update("shippingPrice", targetPrice)
+                                ord.copy(shippingPrice = targetPrice)
+                            } else ord
+                        } else ord
+                    }
+
                     if (!isFirstOrdersSnapshot) {
                         val hasNewReceived = snapshot.documentChanges.any {
                             it.type == com.google.firebase.firestore.DocumentChange.Type.ADDED &&
                                     (it.document.getString("status") ?: "received") == "received"
                         }
                         if (hasNewReceived) {
-                            val latest = list.firstOrNull { it.status == "received" }
+                            val latest = updatedList.firstOrNull { it.status == "received" }
                             val msg = if (latest != null) {
                                 val itemsStr = latest.items.joinToString("\n• ") { "${it.name} (×${it.qty})" }
                                 "🔔 طلب جديد من: ${latest.customerName}\n💰 المبلغ: ${latest.total} جنيه\n📦 المنتجات بالطلب:\n• $itemsStr"
@@ -164,7 +196,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     isFirstOrdersSnapshot = false
 
-                    _uiState.update { it.copy(orders = list, isLoadingOrders = false) }
+                    _uiState.update { it.copy(orders = updatedList, isLoadingOrders = false) }
                 }
             }
 
@@ -399,22 +431,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 db.collection("aldwaar_customers").document(customerId).update("fixedShippingPrice", price)
 
-                val targetCust = _uiState.value.customers.find { it.id == customerId }
-                if (targetCust != null) {
-                    _uiState.value.orders.filter {
-                        (it.customerPhone == targetCust.phone || it.customerName == targetCust.name) &&
-                                (it.shippingPrice == null || it.shippingPrice == 0.0)
-                    }.forEach { ord ->
-                        db.collection("aldwaar_orders").document(ord.id).update(
-                            mapOf(
-                                "shippingPrice" to price,
-                                "updatedAt" to FieldValue.serverTimestamp()
+                db.collection("aldwaar_customers").document(customerId).get().addOnSuccessListener { custDoc ->
+                    if (custDoc != null && custDoc.exists()) {
+                        val custPhone = custDoc.getString("phone") ?: ""
+                        val custName = custDoc.getString("name") ?: ""
+
+                        _uiState.value.orders.filter { ord ->
+                            isCustomerMatch(ord.customerPhone, ord.customerName, custPhone, custName)
+                        }.forEach { ord ->
+                            db.collection("aldwaar_orders").document(ord.id).update(
+                                mapOf(
+                                    "shippingPrice" to price,
+                                    "updatedAt" to FieldValue.serverTimestamp()
+                                )
                             )
-                        )
+                        }
                     }
                 }
 
-                _toastEvent.emit("✅ تم حفظ وتطبيق سعر الشحن الثابت لهذا العميل على طلباته")
+                _toastEvent.emit("✅ تم حفظ وتطبيق سعر الشحن الثابت (${price} ج) لهذا العميل على طلباته")
             } catch (e: Exception) {
                 _toastEvent.emit("❌ تعذر حفظ سعر العميل: ${e.message}")
             }
