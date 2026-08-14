@@ -345,6 +345,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun stopAlarm() {
         AudioAlarmManager.stopAlarm(getApplication())
+        try {
+            OrderForegroundService.stopAlarm(getApplication())
+        } catch (_: Exception) {}
         _uiState.update { it.copy(isAlarmActive = false) }
     }
 

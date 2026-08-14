@@ -27,8 +27,10 @@ class OrderForegroundService : Service() {
         const val CHANNEL_ID_SERVICE = "aldwaar_service_channel"
         const val CHANNEL_ID_NEW_ORDERS = "aldwaar_new_orders_channel"
         const val NOTIF_ID_FOREGROUND = 1001
+        const val NOTIF_ID_NEW_ORDER = 1002
         const val ACTION_START_SERVICE = "com.example.action.START_SERVICE"
         const val ACTION_STOP_SERVICE = "com.example.action.STOP_SERVICE"
+        const val ACTION_STOP_ALARM = "com.example.action.STOP_ALARM"
         const val ACTION_NEW_ORDER_ARRIVED = "com.example.action.NEW_ORDER_ARRIVED"
 
         fun startService(context: Context) {
@@ -48,6 +50,13 @@ class OrderForegroundService : Service() {
             }
             context.stopService(intent)
         }
+
+        fun stopAlarm(context: Context) {
+            val intent = Intent(context, OrderForegroundService::class.java).apply {
+                action = ACTION_STOP_ALARM
+            }
+            context.startService(intent)
+        }
     }
 
     override fun onCreate() {
@@ -61,6 +70,13 @@ class OrderForegroundService : Service() {
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
+        }
+
+        if (intent?.action == ACTION_STOP_ALARM) {
+            AudioAlarmManager.stopAlarm(applicationContext)
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.cancel(NOTIF_ID_NEW_ORDER)
+            return START_STICKY
         }
 
         startForeground(NOTIF_ID_FOREGROUND, createServiceNotification())
@@ -92,14 +108,7 @@ class OrderForegroundService : Service() {
             }
             notificationManager.createNotificationChannel(serviceChannel)
 
-            // High priority alert channel
-            val alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-            val audioAttributes = AudioAttributes.Builder()
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .setUsage(AudioAttributes.USAGE_ALARM)
-                .build()
-
+            // High priority alert channel without default device alarm tone
             val newOrderChannel = NotificationChannel(
                 CHANNEL_ID_NEW_ORDERS,
                 "تنبيهات الطلبات الجديدة 🔔",
@@ -107,8 +116,8 @@ class OrderForegroundService : Service() {
             ).apply {
                 description = "إشعارات هامة ذات أولوية عالية عند وصول طلب جديد"
                 enableVibration(true)
-                vibrationPattern = longArrayOf(0, 500, 300, 500, 300)
-                setSound(alarmSound, audioAttributes)
+                vibrationPattern = longArrayOf(0, 450, 250, 450, 250)
+                setSound(null, null) // In-app AudioAlarmManager handles pleasant custom bells
             }
             notificationManager.createNotificationChannel(newOrderChannel)
         }
@@ -184,7 +193,7 @@ class OrderForegroundService : Service() {
         }
         sendBroadcast(broadcastIntent)
 
-        // Show High Priority System Notification
+        // Show High Priority System Notification with Stop Alarm Action
         val tapIntent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("open_tab", "orders")
@@ -197,19 +206,29 @@ class OrderForegroundService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val stopAlarmIntent = Intent(this, OrderForegroundService::class.java).apply {
+            action = ACTION_STOP_ALARM
+        }
+        val stopAlarmPendingIntent = PendingIntent.getService(
+            this,
+            10099,
+            stopAlarmIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification = NotificationCompat.Builder(this, CHANNEL_ID_NEW_ORDERS)
             .setContentTitle("🔔 طلب جديد وارد! - البان الدوار")
             .setContentText("العميل: $customerName | الإجمالي: $totalAmount جنيه")
             .setStyle(NotificationCompat.BigTextStyle().bigText("وصل طلب جديد الآن من $customerName بقيمة $totalAmount جنيه.\nاضغط لمعاينة الطلب وتحديد سعر التوصيل."))
-            .setSmallIcon(android.R.drawable.stat_sys_warning)
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setSmallIcon(android.R.drawable.stat_notify_chat)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_EVENT)
             .setContentIntent(pendingIntent)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "🔕 إيقاف الصوت", stopAlarmPendingIntent)
             .setAutoCancel(true)
             .build()
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(orderDocId.hashCode(), notification)
+        notificationManager.notify(NOTIF_ID_NEW_ORDER, notification)
     }
 }

@@ -285,14 +285,6 @@ fun MainAppScreen(viewModel: MainViewModel) {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (uiState.isAlarmActive) {
-                AlarmBanner(
-                    message = uiState.alarmMessage,
-                    style = uiState.settings.alarmStyle,
-                    onStopAlarm = { viewModel.stopAlarm() }
-                )
-            }
-
             when (uiState.activeTab) {
                 0 -> OrdersScreen(
                     uiState = uiState,
