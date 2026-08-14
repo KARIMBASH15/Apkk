@@ -16,6 +16,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Generate Gradle Wrapper
+        run: gradle wrapper
+
       - name: Generate debug keystore
         run: |
           keytool -genkeypair -v \
